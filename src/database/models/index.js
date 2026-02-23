@@ -30,7 +30,7 @@ const Address = sequelize.define('Address', {
     city: {type: DataTypes.STRING, allowNull: false},
     state: {type: DataTypes.STRING, allowNull: false},
     country: {type: DataTypes.STRING, allowNull: false},
-    is_default: {type: DataTypes.BOOLEAN, defaultValue: false}
+    is_default: {type: DataTypes.BOOLEAN, defaultValue: false} // Marks this address as default shipping address for user 
 }, {tableName: 'addresses', timestamps:true});
 
 // 4. Categories table
@@ -40,7 +40,7 @@ const Categories = sequelize.define('Categories', {
     slug: {type: DataTypes.STRING, allowNull: false, unique: true},
     description: {type: DataTypes.TEXT},
     parent_id: {type: DataTypes.INTEGER, references: {model: 'categories', key: 'id'}},
-    is_active: {type: DataTypes.BOOLEAN, defaultValue: true}
+    is_active: {type: DataTypes.BOOLEAN, defaultValue: true} // If false, category won't show on website (soft delete)
 }, {tableName: 'categories', timestamps: true});
 
 // 5. Products Table
@@ -50,11 +50,11 @@ const Product = sequelize.define('Product', {
     slug: { type: DataTypes.STRING, allowNull: false, unique: true },
     description: { type: DataTypes.TEXT },
     price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-    compare_at_price: { type: DataTypes.DECIMAL(10, 2) },
+    compare_at_price: { type: DataTypes.DECIMAL(10, 2) }, // Original/MRP price to show discount (e.g., "Was 100, Now 70")
     cost_price: { type: DataTypes.DECIMAL(10, 2) },
     sku: { type: DataTypes.STRING, unique: true },
     quantity: { type: DataTypes.INTEGER, defaultValue: 0 },
-    low_stock_threshold: { type: DataTypes.INTEGER, defaultValue: 5 },
+    low_stock_threshold: { type: DataTypes.INTEGER, defaultValue: 5 }, // Send alert when stock goes below this number
     category_id: { type: DataTypes.INTEGER, references: { model: 'categories', key: 'id' } },
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     is_featured: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -65,10 +65,10 @@ const Product = sequelize.define('Product', {
 const ProductImage = sequelize.define('ProductImage', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     product_id: { type: DataTypes.INTEGER, references: { model: 'products', key: 'id' } },
-    image_url: { type: DataTypes.STRING, allowNull: false },
-    alt_text: { type: DataTypes.STRING },
-    is_primary: { type: DataTypes.BOOLEAN, defaultValue: false },
-    sort_order: { type: DataTypes.INTEGER, defaultValue: 0 }
+    image_url: { type: DataTypes.STRING, allowNull: false }, // Path/URL where image is stored (not the actual image)
+    alt_text: { type: DataTypes.STRING }, // Text shown if image fails to load (also for SEO)
+    is_primary: { type: DataTypes.BOOLEAN, defaultValue: false }, // This image will be shown as main product thumbnail
+    sort_order: { type: DataTypes.INTEGER, defaultValue: 0 } // Display order of images (0 = first, 1 = second, etc.)
 }, { tableName: 'product_images', timestamps: true });
 
 // 7. Orders Table
@@ -118,3 +118,51 @@ const CartItem = sequelize.define('CartItem', {
     price: { type: DataTypes.DECIMAL(10, 2) }
 }, { tableName: 'cart_items', timestamps: true });
 
+
+// Relationships
+Role.hasMany(User, { foreignKey: 'role_id' });
+User.belongsTo(Role, { foreignKey: 'role_id' });
+
+User.hasMany(Address, { foreignKey: 'user_id' });
+Address.belongsTo(User, { foreignKey: 'user_id' });
+
+Category.hasMany(Category, { as: 'subcategories', foreignKey: 'parent_id' });
+Category.belongsTo(Category, { as: 'parent', foreignKey: 'parent_id' });
+
+Category.hasMany(Product, { foreignKey: 'category_id' });
+Product.belongsTo(Category, { foreignKey: 'category_id' });
+
+Product.hasMany(ProductImage, { foreignKey: 'product_id' });
+ProductImage.belongsTo(Product, { foreignKey: 'product_id' });
+
+User.hasMany(Order, { foreignKey: 'user_id' });
+Order.belongsTo(User, { foreignKey: 'user_id' });
+
+Order.hasMany(OrderItem, { foreignKey: 'order_id' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
+
+Product.hasMany(OrderItem, { foreignKey: 'product_id' });
+OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
+
+User.hasOne(Cart, { foreignKey: 'user_id' });
+Cart.belongsTo(User, { foreignKey: 'user_id' });
+
+Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
+CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
+
+Product.hasMany(CartItem, { foreignKey: 'product_id' });
+CartItem.belongsTo(Product, { foreignKey: 'product_id' });
+
+
+module.exports = {
+    Role,
+    User,
+    Address,
+    Categories,
+    Product,
+    ProductImage,
+    Order,
+    OrderItem,
+    Cart,
+    CartItem
+};
