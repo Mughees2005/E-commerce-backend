@@ -69,6 +69,7 @@ async function createGuestUser(session_id) {
         // Generate unique temporary email for guest user using current timestamp
         // guest_1740301234567_0.847562937465@temp.com
         full_name: 'Guest User',
+        role_id: customerRole,
         is_guest: true,
         email_verified: false
     });
@@ -110,4 +111,4 @@ module.exports = {
     createGuestUser,
     getUserProfile,
     verifyToken
-};
+}
