@@ -19,7 +19,7 @@ const User = sequelize.define('User', {
     is_guest: {type: DataTypes.BOOLEAN, defaultValue: false},
     email_verified: {type: DataTypes.BOOLEAN, defaultValue: false},
     last_login: {type: DataTypes.DATE}
-}, {tableName: 'user', timestamps: true});
+}, {tableName: 'users', timestamps: true});
 
 // 3. Address table
 const Address = sequelize.define('Address', {
@@ -34,7 +34,7 @@ const Address = sequelize.define('Address', {
 }, {tableName: 'addresses', timestamps:true});
 
 // 4. Categories table
-const Categories = sequelize.define('Categories', {
+const Category = sequelize.define('Category', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     name: {type: DataTypes.STRING, allowNull: false, unique: true},
     slug: {type: DataTypes.STRING, allowNull: false, unique: true},
@@ -158,7 +158,7 @@ module.exports = {
     Role,
     User,
     Address,
-    Categories,
+    Category,
     Product,
     ProductImage,
     Order,
