@@ -1,5 +1,5 @@
 const {register, login, createGuest, getProfile} = require('../auth/auth.controller');
-const { authMiddleware } = require('../../middleware/auth');
+const authMiddleware = require('../../middleware/auth');
 
 async function routes(fastify) {
     // POST /auth/register → register controller
