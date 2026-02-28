@@ -1,7 +1,7 @@
 // This middleware checks if user is authenticated before allowing access to protected routes
 const {verifyToken} = require('../modules/auth/auth.service');
 
-async function authMiddleware(req, reply, done) {
+async function authMiddleware(req, reply) {
     try{
         // Get token from Authorization header
         // Frontend sends token in format: "Bearer <token>"
@@ -28,9 +28,9 @@ async function authMiddleware(req, reply, done) {
         // Example: In controller, we can access req.user.id
         req.user = decoded;
 
-        // Call done() to proceed to the next function (controller)
-        // If done() is not called, request will hang forever
-        done();
+        // Return to proceed to the next function (controller)
+        // The request will automatically continue to the next handler
+        return;
     }catch (error) {
         reply.code(401).send({error: error.message})
     }
