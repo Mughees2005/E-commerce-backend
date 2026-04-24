@@ -1,3 +1,4 @@
+// require('dotenv').config(); 
 const bcrypt = require('bcrypt');
 const {Role, User, Address, Categories, Product, ProductImage, Order, OrderItem, Cart, CartItem} = require('../../database/models/index');
 const jwt = require('jsonwebtoken');
@@ -6,7 +7,9 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
 
-async function registerUser(email, password, full_name, phone) {
+async function registerUser(userData) {
+    const { email, password, full_name, phone } = userData;
+
     const userExists = await User.findOne({where: {email}});
     // check user exist or not
     if(userExists){
@@ -25,7 +28,7 @@ async function registerUser(email, password, full_name, phone) {
         password_hash: hash_password,
         full_name,
         phone: phone || null,
-        role_id: customerRole,
+        role_id: customerRole.id,
         is_guest: false,
         email_verified: false
     })
@@ -33,10 +36,10 @@ async function registerUser(email, password, full_name, phone) {
     // generate jwt token
     const token = jwt.sign(
         {id: user.id, email: user.email, role_id: user.role_id, is_guest: user.is_guest},
-        JWT_SECRET,
-        {expiresIn: JWT_EXPIRES_IN}
+        process.env.JWT_SECRET,
+        {expiresIn: process.env.JWT_EXPIRES_IN}
     );
-    
+
     return {user:{id: user.id, email: user.email, full_name: user.full_name}, token}
 }
 
@@ -54,8 +57,8 @@ async function loginUser(email, password) {
 
     const token = jwt.sign(
         {id: user.id, email: user.email, role_id: user.role_id, is_guest: user.is_guest},
-        JWT_SECRET,
-        {expiresIn: JWT_EXPIRES_IN}
+        process.env.JWT_SECRET,
+        {expiresIn: process.env.JWT_EXPIRES_IN}
     );
     return {user: {id: user.id, name: user.name, email: user.email}, token};
 }
@@ -69,17 +72,17 @@ async function createGuestUser(session_id) {
         // Generate unique temporary email for guest user using current timestamp
         // guest_1740301234567_0.847562937465@temp.com
         full_name: 'Guest User',
-        role_id: customerRole,
+        role_id: customerRole.id,
         is_guest: true,
         email_verified: false
     });
 
     const token = jwt.sign(
         {id: guest.id, is_guest: true, role_id: guest.role_id},
-        JWT_SECRET,
-        JWT_EXPIRES_IN
+        process.env.JWT_SECRET,
+        process.env.JWT_EXPIRES_IN
     )
-    return ({id: is_guest, is_guest: true, session_id: session_id, token});
+    return ({id: guest.id, is_guest: true, session_id: session_id, token});
 }
 
 
@@ -98,7 +101,7 @@ async function getUserProfile(userId) {
 // Verifies JWT token and returns decoded user data (id, email, role)
 async function verifyToken(token) {
     try{
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         return decoded; // Returns user data from token
         }catch (error){
             throw new Error('Invalid or expired token');

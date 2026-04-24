@@ -14,7 +14,7 @@ async function seedRoles() {
         
         // Bulk create - professional 
         await Role.bulkCreate(roles, {
-            ignoreDuplicates: true,  // if data already exist, ignore it
+            // ignoreDuplicates: true,  // if data already exist, ignore it
             updateOnDuplicate: ['description']  // if name is same then update the description
         });
         

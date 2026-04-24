@@ -2,8 +2,10 @@ const {registerUser, loginUser, getUserProfile, createGuestUser} = require('../a
 
 async function register(req, reply) {
     try{
+        // const { email, password, full_name, phone } = req.body;
+        // const result = await registerUser(email, password, full_name, phone);
         const result = await registerUser(req.body);
-        return reply.send.status(201).send(result);
+        return reply.status(201).send(result);
     }catch (error){
         reply.code(500).send({error: error.message})
     }
@@ -11,8 +13,8 @@ async function register(req, reply) {
 
 async function login(req, reply) {
     try{
-        const {email, password_hash}  = req.body;
-        const {user, token} = await loginUser(email, password_hash);
+        const {email, password}  = req.body;
+        const {user, token} = await loginUser(email, password);
         // const result = await loginUser(req.body);
         reply.send({message: 'login done', user: user, token})
     }catch (error){
