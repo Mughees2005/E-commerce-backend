@@ -12,8 +12,14 @@ async function setupDatabase() {
         await sequelize.sync();
         console.log('Tables Synced');
 
-        // registering routes
+        // registering auth routes
         fastify.register(require('./modules/auth/auth.routes'));
+
+        // registering product routes
+        fastify.register(require('./modules/products/product.routes'));
+
+        // registring category routes
+        fastify.register(require('./modules/categories/category.routes'));
 
         // starting server
         fastify.listen({port:3000}, err =>{
