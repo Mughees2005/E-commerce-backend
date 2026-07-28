@@ -21,6 +21,18 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - "15672:15672" # app connection
+      - "5672:5672"   # management UI
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
