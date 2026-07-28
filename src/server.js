@@ -24,6 +24,9 @@ async function setupDatabase() {
         // registering cart routes
         fastify.register(require('./modules/cart/cart.routes'));
 
+        // registering order routes
+        fastify.register(require('./modules/orders/order.routes'));
+
         // starting server
         fastify.listen({port:3000}, err =>{
             if (err) throw new err 
