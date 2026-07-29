@@ -6,6 +6,7 @@ const seedRoles = require('./01-roles');
 async function run() {
     try {
         await sequelize.authenticate();
+        await sequelize.sync(); // newly added
         await seedRoles();
         console.log('Seeding done!');
         process.exit(0);
