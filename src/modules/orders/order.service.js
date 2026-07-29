@@ -1,5 +1,5 @@
-const { Order, OrderItem, Cart, CartItem, Product } = require('../../database/models/index');
-
+const { Order, OrderItem, Cart, CartItem, Product, User } = require('../../database/models/index');
+const { sendOrderConfirmation } = require('../../queues/orderQueue');
 
 // Place a new order from user's cart
 // - Checks stock availability
@@ -14,6 +14,9 @@ async function placeOrder(userId, orderData) {
         where: { user_id: userId },
         include: [{ model: CartItem, include: [Product] }]
     });
+
+    // get user details for email
+    const user = await User.findByPk(userId);
 
     if (!cart || cart.CartItems.length === 0) throw new Error('Cart is empty');
 
@@ -59,6 +62,20 @@ async function placeOrder(userId, orderData) {
 
     // Clear cart after order placed
     await CartItem.destroy({ where: { cart_id: cart.id } });
+
+    // Send order confirmation to queue
+    await sendOrderConfirmation({
+        order_number: order.order_number,
+        user_email: user.email,
+        user_name: user.full_name,
+        items: cart.CartItems.map(item => ({
+            name: item.Product.name,
+            quantity: item.quantity,
+            price: item.price
+        })),
+        total: subtotal,
+        payment_method: order.payment_method
+    });
 
     return order;
 }
