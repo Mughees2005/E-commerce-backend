@@ -2,7 +2,8 @@ require('dotenv').config({path: require('path').join(__dirname, '../.env')});
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
 const fastify = require('fastify')();
 const sequelize = require('./config/database'); 
-
+const { connectRabbitMQ } = require('./config/rabbitmq');
+const { startOrderConsumer } = require('./queues/orderConsumer');
 
 async function setupDatabase() {
     try{
@@ -11,6 +12,9 @@ async function setupDatabase() {
 
         await sequelize.sync();
         console.log('Tables Synced');
+
+        await connectRabbitMQ(); // Connect to RabbitMQ message broker
+        await startOrderConsumer; // Consumer start
 
         // registering auth routes
         fastify.register(require('./modules/auth/auth.routes'));
