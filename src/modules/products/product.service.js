@@ -1,5 +1,6 @@
 const { where } = require('sequelize');
 const { Product, ProductImage, Category } = require('../../database/models/index');
+const { setCache, getCache, deleteCache, deleteCacheByPattern } = require('../../config/cache');
 
 async function createProduct(productData, userId){
     const {name, slug, description, price, compared_at_price, cost_price, sku, quantity, category_id, is_featured } = productData;
@@ -29,11 +30,21 @@ async function createProduct(productData, userId){
         is_featured: is_featured || false,
         created_by: userId
     });
+
+    // Clear products cache when new product is added
+     deleteCacheByPattern('products:*');
+
     return product;
 }
 
 
 async function getAllProducts() {
+    const cached = await getCache('products:all');
+    if (cached){
+        console.log('Products from Cache');
+        return cached;
+    }
+
     const products = await Product.findAll({
         where: {is_active: true},
         include: [
@@ -41,10 +52,21 @@ async function getAllProducts() {
             { model: ProductImage, attributes: ['image_url', 'alt_text', 'is_primary'] }
         ]
     });
+
+    // Save to cache for 10 minutes
+    await setCache('products:all', products, 600);
+
     return products;
 }
 
 async function getProductById(id) {
+    // Check cache first
+    const cached = await getCache(`products:${id}`);
+    if (cached) {
+        console.log('Product from cache');
+        return cached;
+    }
+
     const product = await Product.findOne({
         where: {id, is_active: true},
         include: [
@@ -53,6 +75,9 @@ async function getProductById(id) {
         ]
     });
     if(!product) throw new Error('Product not found');
+
+    // Save to cache for 10 minutes
+    await setCache(`products:${id}`, product, 600);
     return product; 
 }
 
@@ -61,6 +86,11 @@ async function updateProduct(id, updateData) {
     if (!product) throw new Error('Product not found');
 
     await product.update(updateData);
+
+    // Clear cache for this product and all products list
+    await deleteCache(`products:${id}`);
+    await deleteCacheByPattern('products:*');
+
     return product;
 }
 
@@ -69,6 +99,11 @@ async function deleteProduct(id) {
     if (!product) throw new Error('Product not found');
 
     await product.update({is_active: false});
+
+    // Clear cache for this product and all products list
+    await deleteCache(`products:${id}`);
+    await deleteCacheByPattern('products:*');
+
     return { message: 'Product deleted successfully'};
 }
 

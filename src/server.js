@@ -4,6 +4,7 @@ const fastify = require('fastify')();
 const sequelize = require('./config/database'); 
 const { connectRabbitMQ } = require('./config/rabbitmq');
 const { startOrderConsumer } = require('./queues/orderConsumer');
+const redis = require('./config/redis')
 
 async function setupDatabase() {
     try{
