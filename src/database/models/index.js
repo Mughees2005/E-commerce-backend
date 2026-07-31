@@ -27,11 +27,19 @@ const Address = sequelize.define('Address', {
     user_id: {type: DataTypes.INTEGER, references: {model: 'users', key: 'id'} },
     address_line1: {type: DataTypes.STRING, allowNull: false},
     address_line2: {type: DataTypes.STRING},
-    city: {type: DataTypes.STRING, allowNull: false},
-    state: {type: DataTypes.STRING, allowNull: false},
-    country: {type: DataTypes.STRING, allowNull: false},
+    city: {type: DataTypes.STRING, allowNull: false, defaultValue: 'Karachi' },
+    country: {type: DataTypes.STRING, allowNull: false, defaultValue: 'Pakistan' },
+    area_id: { type: DataTypes.INTEGER, references: { model: 'delivery_areas', key: 'id' } },
     is_default: {type: DataTypes.BOOLEAN, defaultValue: false} // Marks this address as default shipping address for user 
 }, {tableName: 'addresses', timestamps:true});
+
+// Delivery Areas Table
+const DeliveryArea = sequelize.define('DeliveryArea', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    area_name: { type: DataTypes.STRING, allowNull: false },
+    delivery_charge: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    is_active: { type: DataTypes.BOOLEAN, defaultValue: true }
+}, { tableName: 'delivery_areas', timestamps: true });
 
 // 4. Categories table
 const Category = sequelize.define('Category', {
@@ -153,11 +161,14 @@ CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 Product.hasMany(CartItem, { foreignKey: 'product_id' });
 CartItem.belongsTo(Product, { foreignKey: 'product_id' });
 
+DeliveryArea.hasMany(Address, { foreignKey: 'area_id' });
+Address.belongsTo(DeliveryArea, { foreignKey: 'area_id' });
 
 module.exports = {
     Role,
     User,
     Address,
+    DeliveryArea,
     Category,
     Product,
     ProductImage,
