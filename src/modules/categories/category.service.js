@@ -1,12 +1,23 @@
 const { Category } = require('../../database/models/index');
 const { setCache, getCache, deleteCache, deleteCacheByPattern } = require('../../config/cache');
 
+// Auto-generate slug from category name
+function generateSlug(name) {
+    return name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]/g, '');
+}
+
 async function createCategory(categoryData){
-    const {name, slug, description, parent_id} = categoryData;
+    const {name, description, parent_id} = categoryData;
+    // slug auto-generate from name
+    let slug = generateSlug(name);
 
     // checking if slug already exist
-    const slugExists = await Category.findOne( {where: {slug}});
-    if (slugExists) throw new Error('Slug already exists');
+    const slugExists = await Category.findOne({ where: { slug } });
+    if (slugExists) slug = `${slug}-${Date.now()}`;
 
     const category = await Category.create({
         name, 

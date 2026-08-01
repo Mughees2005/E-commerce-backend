@@ -2,12 +2,38 @@ const { where } = require('sequelize');
 const { Product, ProductImage, Category } = require('../../database/models/index');
 const { setCache, getCache, deleteCache, deleteCacheByPattern } = require('../../config/cache');
 
-async function createProduct(productData, userId){
-    const {name, slug, description, price, compared_at_price, cost_price, sku, quantity, category_id, is_featured } = productData;
+// Auto-generate slug from product name
+// Example: "A4 Paper" → "a4-paper"
+function generateSlug(name) {
+    return name
+        .toLowerCase()           // "A4 Paper" → "a4 paper"
+        .trim()                  // remove extra spaces
+        .replace(/\s+/g, '-')   // spaces → hyphens: "a4 paper" → "a4-paper"
+        .replace(/[^\w-]/g, ''); // remove special characters
+}
 
-    // check if slug already exist
-    const slugExists = await Product.findOne({where: { slug }});
-    if (slugExists) throw new Error('Slug already exists');
+// Auto-generate SKU based on last product's SKU
+async function generateSKU() {
+    const lastProduct = await Product.findOne({
+        order: [['createdAt', 'DESC']]
+    });
+    
+    if (!lastProduct) return 'SKU-1';
+    
+    const lastNumber = parseInt(lastProduct.sku.replace('SKU-', ''));
+    return `SKU-${lastNumber + 1}`;
+}
+
+async function createProduct(productData, userId){
+    const {name, description, price, compare_at_price, quantity, category_id, is_featured, is_unlimited, low_stock_threshold } = productData;
+    // slug auto-generate from name
+    let slug = generateSlug(name);
+    // Auto-generate SKU based on last product's SKU
+    const sku = productData.sku || await generateSKU();
+
+    // check if slug already exists — add number if duplicate
+    const slugExists = await Product.findOne({ where: { slug } });
+    if (slugExists) slug = `${slug}-${Date.now()}`;
 
     // check if sku exist
     const skuExists = await Product.findOne( {where: {sku}});
@@ -17,22 +43,35 @@ async function createProduct(productData, userId){
     const category = await Category.findByPk(category_id);
     if(!category) throw new Error('Category not found');
 
+    // if unlimited, set quantity and threshold to null
+    if (is_unlimited) {
+        quantity = null;
+        low_stock_threshold = null;
+    }
+
+    // if not unlimited, quantity required
+    if (!is_unlimited && (quantity === null || quantity === undefined)) {
+        throw new Error('Quantity is required when product is not unlimited');
+    }
+
     const product = await Product.create({
         name,
         slug, 
         description,
         price,
-        compared_at_price: compared_at_price || null,
-        cost_price: cost_price || null,
-        sku,
-        quantity: quantity || 0,
+        compare_at_price: compare_at_price || null,
+        sku: sku,
+        is_unlimited: is_unlimited || false,
+        quantity: is_unlimited ? null : quantity,
+        low_stock_threshold: is_unlimited ? null : (low_stock_threshold || null),
         category_id,
+        is_active: true,
         is_featured: is_featured || false,
         created_by: userId
     });
 
     // Clear products cache when new product is added
-     deleteCacheByPattern('products:*');
+    await deleteCacheByPattern('products:*');
 
     return product;
 }
@@ -84,6 +123,17 @@ async function getProductById(id) {
 async function updateProduct(id, updateData) {
     const product = await Product.findByPk(id);
     if (!product) throw new Error('Product not found');
+
+    // if unlimited, set quantity and threshold to null
+    if (updateData.is_unlimited) {
+        updateData.quantity = null;
+        updateData.low_stock_threshold = null;
+    }
+
+    // if not unlimited, quantity required
+    if (updateData.is_unlimited === false && (updateData.quantity === null || updateData.quantity === undefined)) {
+        throw new Error('Quantity is required when product is not unlimited');
+    }
 
     await product.update(updateData);
 

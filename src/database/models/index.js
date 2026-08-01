@@ -59,12 +59,12 @@ const Product = sequelize.define('Product', {
     description: { type: DataTypes.TEXT },
     price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
     compare_at_price: { type: DataTypes.DECIMAL(10, 2) }, // Original/MRP price to show discount (e.g., "Was 100, Now 70")
-    cost_price: { type: DataTypes.DECIMAL(10, 2) },
     sku: { type: DataTypes.STRING, unique: true },
-    quantity: { type: DataTypes.INTEGER, defaultValue: 0 },
-    low_stock_threshold: { type: DataTypes.INTEGER, defaultValue: 5 }, // Send alert when stock goes below this number
+    is_unlimited: { type: DataTypes.BOOLEAN, defaultValue: false }, // true = unlimited stock
+    quantity: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null }, // null when is_unlimited is true
+    low_stock_threshold: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null }, // alert when stock reaches this number
     category_id: { type: DataTypes.INTEGER, references: { model: 'categories', key: 'id' } },
-    is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+    is_active: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: null},
     is_featured: { type: DataTypes.BOOLEAN, defaultValue: false },
     created_by: { type: DataTypes.INTEGER, references: { model: 'users', key: 'id' } }
 }, { tableName: 'products', timestamps: true });

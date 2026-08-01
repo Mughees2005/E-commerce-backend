@@ -26,4 +26,28 @@ async function sendOrderConfirmation(orderData) {
     }
 }
 
-module.exports = { sendOrderConfirmation };
+// Send low stock alert to queue
+async function sendLowStockAlert(productData) {
+    const channel = await getChannel();
+    await channel.assertQueue('low_stock_alert', { durable: true });
+    channel.sendToQueue(
+        'low_stock_alert',
+        Buffer.from(JSON.stringify(productData)),
+        { persistent: true }
+    );
+    console.log('Low stock alert sent:', productData.product_name);
+}
+
+// Send out of stock alert to queue
+async function sendOutOfStockAlert(productData) {
+    const channel = await getChannel();
+    await channel.assertQueue('out_of_stock_alert', { durable: true });
+    channel.sendToQueue(
+        'out_of_stock_alert',
+        Buffer.from(JSON.stringify(productData)),
+        { persistent: true }
+    );
+    console.log('Out of stock alert sent:', productData.product_name);
+}
+
+module.exports = { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert };

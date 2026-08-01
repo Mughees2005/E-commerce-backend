@@ -1,5 +1,5 @@
 const { Order, OrderItem, Cart, CartItem, Product, User } = require('../../database/models/index');
-const { sendOrderConfirmation } = require('../../queues/orderQueue');
+const { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert } = require('../../queues/orderQueue');
 
 // Place a new order from user's cart
 // - Checks stock availability
@@ -24,7 +24,9 @@ async function placeOrder(userId, orderData) {
     let subtotal = 0;
     for (const item of cart.CartItems) {
         if (!item.Product.is_active) throw new Error(`${item.Product.name} is not available`);
-        if (item.Product.quantity < item.quantity) throw new Error(`Insufficient stock for ${item.Product.name}`);
+        if (!item.Product.is_unlimited && item.Product.quantity < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.Product.name}`);
+        }
         subtotal += item.price * item.quantity;
     }
 
@@ -57,7 +59,27 @@ async function placeOrder(userId, orderData) {
         });
 
         // Decrease product stock
-        await item.Product.update({ quantity: item.Product.quantity - item.quantity });
+        if (!item.Product.is_unlimited) {
+            const newQuantity = item.Product.quantity - item.quantity;
+            await item.Product.update({ quantity: newQuantity });
+
+            // Out of stock alert
+            if (newQuantity === 0) {
+                await sendOutOfStockAlert({
+                    product_name: item.Product.name,
+                    product_id: item.Product.id
+                });
+        }
+        // Low stock alert
+        else if (item.Product.low_stock_threshold && newQuantity <= item.Product.low_stock_threshold) {
+            await sendLowStockAlert({
+                product_name: item.Product.name,
+                product_id: item.Product.id,
+                remaining_quantity: newQuantity,
+                threshold: item.Product.low_stock_threshold
+            });
+        }
+        }
     }
 
     // Clear cart after order placed
