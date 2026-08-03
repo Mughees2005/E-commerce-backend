@@ -69,6 +69,27 @@ const Product = sequelize.define('Product', {
     created_by: { type: DataTypes.INTEGER, references: { model: 'users', key: 'id' } }
 }, { tableName: 'products', timestamps: true });
 
+// Product variants table
+const ProductVariant = sequelize.define('ProductVariant', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    product_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'products', key: 'id' } },
+    combination_name: { type: DataTypes.STRING, allowNull: false }, // e.g. "Red + A4"
+    price: { type: DataTypes.DECIMAL(10, 2) }, // null = use parent price
+    quantity: { type: DataTypes.INTEGER }, // null = use parent stock
+    is_unlimited: { type: DataTypes.BOOLEAN }, // null = use parent setting
+    low_stock_threshold: { type: DataTypes.INTEGER },
+    sku: { type: DataTypes.STRING, unique: true, allowNull: true },
+    is_active: { type: DataTypes.BOOLEAN, defaultValue: true }
+}, { tableName: 'product_variants', timestamps: true });
+
+// Variants Attributes table
+const VariantAttribute = sequelize.define('VariantAttribute', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    variant_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'product_variants', key: 'id' } },
+    attribute_name: { type: DataTypes.STRING, allowNull: false }, // e.g. "Color"
+    attribute_value: { type: DataTypes.STRING, allowNull: false } // e.g. "Red"
+}, { tableName: 'variant_attributes', timestamps: true });
+
 // 6. Product Images Table
 const ProductImage = sequelize.define('ProductImage', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -164,6 +185,12 @@ Address.belongsTo(DeliveryArea, { foreignKey: 'area_id' });
 Order.belongsTo(Address, { foreignKey: 'address_id' });
 Address.hasMany(Order, { foreignKey: 'address_id' });
 
+Product.hasMany(ProductVariant, { foreignKey: 'product_id' });
+ProductVariant.belongsTo(Product, { foreignKey: 'product_id' });
+
+ProductVariant.hasMany(VariantAttribute, { foreignKey: 'variant_id' });
+VariantAttribute.belongsTo(ProductVariant, { foreignKey: 'variant_id' });
+
 module.exports = {
     Role,
     User,
@@ -171,6 +198,8 @@ module.exports = {
     DeliveryArea,
     Category,
     Product,
+    ProductVariant,
+    VariantAttribute,
     ProductImage,
     Order,
     OrderItem,
