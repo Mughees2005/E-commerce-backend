@@ -1,4 +1,4 @@
-const { Order, OrderItem, Cart, CartItem, Product, User } = require('../../database/models/index');
+const { Order, OrderItem, Cart, CartItem, Product, User, DeliveryArea} = require('../../database/models/index');
 const { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert } = require('../../queues/orderQueue');
 
 // Place a new order from user's cart
@@ -7,13 +7,18 @@ const { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert } = requir
 // - Decreases product stock
 // - Clears cart after order placed
 async function placeOrder(userId, orderData) {
-    const { address_id, notes } = orderData;
+    const { customer_name, customer_phone, customer_address, area_id, notes } = orderData;
 
     // Get user's cart with items
     const cart = await Cart.findOne({
         where: { user_id: userId },
         include: [{ model: CartItem, include: [Product] }]
     });
+
+    // Get delivery charge from area 
+    const area = await DeliveryArea.findByPk(area_id);
+    if (!area) throw new Error('Delivery area not found');
+    const shipping_cost = area.delivery_charge;
 
     // get user details for email
     const user = await User.findByPk(userId);
@@ -36,14 +41,17 @@ async function placeOrder(userId, orderData) {
     // Create order
     const order = await Order.create({
         order_number,
-        user_id: userId,
+        user_id: userId || null,
         payment_method: 'cod',
-        address_id,
-        notes: notes || null,
+        customer_name,
+        customer_phone,
+        customer_address,
+        area_id,
         subtotal,
-        total: subtotal,
+        shipping_cost,
+        total: subtotal + parseFloat(shipping_cost),
+        notes: notes || null,
         status: 'pending',
-        payment_status: 'pending',
         placed_at: new Date()
     });
 
@@ -90,13 +98,18 @@ async function placeOrder(userId, orderData) {
         order_number: order.order_number,
         user_email: user.email,
         user_name: user.full_name,
+        customer_name,
+        customer_phone,
+        customer_address,
         items: cart.CartItems.map(item => ({
             name: item.Product.name,
             quantity: item.quantity,
             price: item.price
         })),
-        total: subtotal,
-        payment_method: order.payment_method
+        subtotal,
+        shipping_cost,
+        total: subtotal + parseFloat(shipping_cost),
+        payment_method: 'cod'
     });
 
     return order;
