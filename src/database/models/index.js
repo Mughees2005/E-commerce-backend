@@ -76,7 +76,7 @@ const ProductImage = sequelize.define('ProductImage', {
     image_url: { type: DataTypes.STRING, allowNull: false }, // Path/URL where image is stored (not the actual image)
     alt_text: { type: DataTypes.STRING }, // Text shown if image fails to load (also for SEO)
     is_primary: { type: DataTypes.BOOLEAN, defaultValue: false }, // This image will be shown as main product thumbnail
-    sort_order: { type: DataTypes.INTEGER, defaultValue: 0 } // Display order of images (0 = first, 1 = second, etc.)
+    // sort_order: { type: DataTypes.INTEGER, defaultValue: 0 } // Display order of images (0 = first, 1 = second, etc.)
 }, { tableName: 'product_images', timestamps: true });
 
 // 7. Orders Table
@@ -84,16 +84,13 @@ const Order = sequelize.define('Order', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     order_number: { type: DataTypes.STRING, unique: true },
     user_id: { type: DataTypes.INTEGER, references: { model: 'users', key: 'id' } },
-    status: { type: DataTypes.ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'), defaultValue: 'pending' },
-    payment_status: { type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'), defaultValue: 'pending' },
-    payment_method: { type: DataTypes.ENUM('cod', 'card', 'bank_transfer') },
+    status: { type: DataTypes.ENUM('pending', 'delivered', 'cancelled'), defaultValue: 'pending' },
+    // payment_status: { type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'), defaultValue: 'pending' },
+    payment_method: { type: DataTypes.ENUM('cod') },
     subtotal: { type: DataTypes.DECIMAL(10, 2) },
-    discount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     shipping_cost: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
-    tax: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
-    total: { type: DataTypes.DECIMAL(10, 2) },
-    shipping_address_id: { type: DataTypes.INTEGER, references: { model: 'addresses', key: 'id' } },
-    billing_address_id: { type: DataTypes.INTEGER, references: { model: 'addresses', key: 'id' } },
+    total: { type: DataTypes.DECIMAL(10, 2) }, 
+    address_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'addresses', key: 'id' }},
     notes: { type: DataTypes.TEXT },
     placed_at: { type: DataTypes.DATE },
     delivered_at: { type: DataTypes.DATE }
@@ -163,6 +160,9 @@ CartItem.belongsTo(Product, { foreignKey: 'product_id' });
 
 DeliveryArea.hasMany(Address, { foreignKey: 'area_id' });
 Address.belongsTo(DeliveryArea, { foreignKey: 'area_id' });
+
+Order.belongsTo(Address, { foreignKey: 'address_id' });
+Address.hasMany(Order, { foreignKey: 'address_id' });
 
 module.exports = {
     Role,

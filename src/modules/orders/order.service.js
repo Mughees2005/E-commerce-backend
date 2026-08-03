@@ -7,7 +7,7 @@ const { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert } = requir
 // - Decreases product stock
 // - Clears cart after order placed
 async function placeOrder(userId, orderData) {
-    const { payment_method, shipping_address_id, notes } = orderData;
+    const { address_id, notes } = orderData;
 
     // Get user's cart with items
     const cart = await Cart.findOne({
@@ -31,14 +31,14 @@ async function placeOrder(userId, orderData) {
     }
 
     // Generate unique order number
-    const order_number = `ORD-${Date.now()}`;
+    const order_number = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Create order
     const order = await Order.create({
         order_number,
         user_id: userId,
-        payment_method,
-        shipping_address_id,
+        payment_method: 'cod',
+        address_id,
         notes: notes || null,
         subtotal,
         total: subtotal,
