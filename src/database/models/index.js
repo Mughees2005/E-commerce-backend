@@ -108,6 +108,10 @@ const Order = sequelize.define('Order', {
     status: { type: DataTypes.ENUM('pending', 'delivered', 'cancelled'), defaultValue: 'pending' },
     // payment_status: { type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'), defaultValue: 'pending' },
     payment_method: { type: DataTypes.ENUM('cod') },
+    customer_name: { type: DataTypes.STRING, allowNull: false },
+    customer_phone: { type: DataTypes.STRING, allowNull: false },
+    customer_address: { type: DataTypes.TEXT, allowNull: false },
+    area_id: { type: DataTypes.INTEGER, references: { model: 'delivery_areas', key: 'id' } },
     subtotal: { type: DataTypes.DECIMAL(10, 2) },
     shipping_cost: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     total: { type: DataTypes.DECIMAL(10, 2) }, 
@@ -181,9 +185,6 @@ CartItem.belongsTo(Product, { foreignKey: 'product_id' });
 
 DeliveryArea.hasMany(Address, { foreignKey: 'area_id' });
 Address.belongsTo(DeliveryArea, { foreignKey: 'area_id' });
-
-Order.belongsTo(Address, { foreignKey: 'address_id' });
-Address.hasMany(Order, { foreignKey: 'address_id' });
 
 Product.hasMany(ProductVariant, { foreignKey: 'product_id' });
 ProductVariant.belongsTo(Product, { foreignKey: 'product_id' });
