@@ -35,6 +35,9 @@ async function setupDatabase() {
         // registering variant routes
         fastify.register(require('./modules/variants/variants.routes'));
 
+        // registering delivery areas routes
+        fastify.register(require('./modules/delivery-areas/delivery-areas.routes'));
+
         // starting server
         fastify.listen({port:3000}, err =>{
             if (err) throw new err 
