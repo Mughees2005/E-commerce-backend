@@ -7,7 +7,7 @@ const { sendOrderConfirmation, sendLowStockAlert, sendOutOfStockAlert } = requir
 // - Decreases product stock
 // - Clears cart after order placed
 async function placeOrder(userId, orderData) {
-    const { customer_name, customer_phone, customer_address, area_id, notes } = orderData;
+    const { customer_name, customer_phone, customer_address, customer_email, area_id, notes } = orderData;
 
     // Get user's cart with items
     const cart = await Cart.findOne({
@@ -15,7 +15,7 @@ async function placeOrder(userId, orderData) {
         include: [{ model: CartItem, include: [Product] }]
     });
 
-    // Get delivery charge from area 
+    // Get delivery charge from area  
     const area = await DeliveryArea.findByPk(area_id);
     if (!area) throw new Error('Delivery area not found');
     const shipping_cost = area.delivery_charge;
@@ -46,6 +46,7 @@ async function placeOrder(userId, orderData) {
         customer_name,
         customer_phone,
         customer_address,
+        customer_email: userId ? user.email : customer_email,
         area_id,
         subtotal,
         shipping_cost,
@@ -96,11 +97,13 @@ async function placeOrder(userId, orderData) {
     // Send order confirmation to queue
     await sendOrderConfirmation({
         order_number: order.order_number,
-        user_email: user.email,
+        user_email: userId ? user.email : customer_email,
         user_name: user.full_name,
         customer_name,
         customer_phone,
         customer_address,
+        notes,
+
         items: cart.CartItems.map(item => ({
             name: item.Product.name,
             quantity: item.quantity,

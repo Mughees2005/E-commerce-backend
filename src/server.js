@@ -15,7 +15,9 @@ async function setupDatabase() {
         console.log('Tables Synced');
 
         await connectRabbitMQ(); // Connect to RabbitMQ message broker
-        await startOrderConsumer; // Consumer start
+        await startOrderConsumer(); // Consumer start
+
+        require('./config/email'); // Initialize email transporter and verify connection
 
         // registering auth routes
         fastify.register(require('./modules/auth/auth.routes'));

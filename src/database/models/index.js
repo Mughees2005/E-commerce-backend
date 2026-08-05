@@ -111,11 +111,11 @@ const Order = sequelize.define('Order', {
     customer_name: { type: DataTypes.STRING, allowNull: false },
     customer_phone: { type: DataTypes.STRING, allowNull: false },
     customer_address: { type: DataTypes.TEXT, allowNull: false },
+    customer_email: { type: DataTypes.STRING, allowNull: false },
     area_id: { type: DataTypes.INTEGER, references: { model: 'delivery_areas', key: 'id' } },
     subtotal: { type: DataTypes.DECIMAL(10, 2) },
     shipping_cost: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     total: { type: DataTypes.DECIMAL(10, 2) }, 
-    address_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'addresses', key: 'id' }},
     notes: { type: DataTypes.TEXT },
     placed_at: { type: DataTypes.DATE },
     delivered_at: { type: DataTypes.DATE }
