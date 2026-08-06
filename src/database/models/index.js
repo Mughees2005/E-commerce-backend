@@ -65,6 +65,7 @@ const Product = sequelize.define('Product', {
     low_stock_threshold: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null }, // alert when stock reaches this number
     category_id: { type: DataTypes.INTEGER, references: { model: 'categories', key: 'id' } },
     is_active: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: null},
+    search_vector: { type: DataTypes.TSVECTOR, allowNull: true }, 
     is_featured: { type: DataTypes.BOOLEAN, defaultValue: false },
     created_by: { type: DataTypes.INTEGER, references: { model: 'users', key: 'id' } }
 }, { tableName: 'products', timestamps: true });

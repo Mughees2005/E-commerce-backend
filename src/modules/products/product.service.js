@@ -1,7 +1,8 @@
 const { where } = require('sequelize');
 const { Product, ProductImage, Category } = require('../../database/models/index');
 const { setCache, getCache, deleteCache, deleteCacheByPattern } = require('../../config/cache');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
+const sequelize = require('../../config/database');
 
 // Auto-generate slug from product name
 // Example: "A4 Paper" → "a4-paper"
@@ -89,9 +90,12 @@ async function getAllProducts(page = 1, limit = 32, filters = {}) {
 
     // Search by product name
     if (search) {
-        where.name = {
-            [Op.iLike]: `%${search}%`
-        };
+        where[Op.or] = [
+            { name: { [Op.iLike]: `%${search}%` } }, // partial: "pap" → "paper"
+            Sequelize.literal(
+                `"Product"."search_vector" @@ plainto_tsquery('english', ${sequelize.escape(search)})`
+            ) // FTS: "pencil" → "pencils"
+        ];
     }
 
     // Category filter
