@@ -11,7 +11,16 @@ async function createProductHandler(req, reply) {
 
 async function getAllProductsHandler(req, reply) {
     try {
-        const products = await getAllProducts();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 32;
+        const filters = {
+            search: req.query.search,
+            category_id: req.query.category_id,
+            minPrice: req.query.minPrice,
+            maxPrice: req.query.maxPrice,
+            is_featured: req.query.is_featured
+        };
+        const products = await getAllProducts(page, limit, filters);
         return reply.send(products);
     } catch (error) {
         reply.code(500).send({ error: error.message });

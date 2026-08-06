@@ -1,6 +1,7 @@
 const { where } = require('sequelize');
 const { Product, ProductImage, Category } = require('../../database/models/index');
 const { setCache, getCache, deleteCache, deleteCacheByPattern } = require('../../config/cache');
+const { Op } = require('sequelize');
 
 // Auto-generate slug from product name
 // Example: "A4 Paper" → "a4-paper"
@@ -77,25 +78,86 @@ async function createProduct(productData, userId){
 }
 
 
-async function getAllProducts() {
-    const cached = await getCache('products:all');
-    if (cached){
-        console.log('Products from Cache');
+async function getAllProducts(page = 1, limit = 32, filters = {}) {
+    const { search, category_id, minPrice, maxPrice, is_featured } = filters;
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    const where = {
+        is_active: true
+    };
+
+    // Search by product name
+    if (search) {
+        where.name = {
+            [Op.iLike]: `%${search}%`
+        };
+    }
+
+    // Category filter
+    if (category_id) {
+        where.category_id = category_id;
+    }
+
+    // Price filter
+    if (minPrice || maxPrice) {
+        where.price = {};
+
+        if (minPrice) {
+            where.price[Op.gte] = minPrice;
+        }
+
+        if (maxPrice) {
+            where.price[Op.lte] = maxPrice;
+        }
+    }
+
+    // Featured filter
+    if (is_featured) {
+        where.is_featured = true;
+    }
+
+    // Cache key (includes filters)
+    const cacheKey = `products:page:${page}:limit:${limit}:filters:${JSON.stringify(filters)}`;
+
+    // Check cache first
+    const cached = await getCache(cacheKey);
+    if (cached) {
+        console.log("Products from cache");
         return cached;
     }
 
-    const products = await Product.findAll({
-        where: {is_active: true},
+    const { count, rows } = await Product.findAndCountAll({
+        where,
         include: [
-            {model: Category, attributes: ['id', 'name']},
-            { model: ProductImage, attributes: ['image_url', 'alt_text', 'is_primary'] }
-        ]
+            {
+                model: Category,
+                attributes: ["id", "name"]
+            },
+            {
+                model: ProductImage,
+                attributes: ["image_url", "alt_text", "is_primary"]
+            }
+        ],
+        limit,
+        offset,
+        order: [["createdAt", "DESC"]]
     });
 
-    // Save to cache for 10 minutes
-    await setCache('products:all', products, 600);
+    const result = {
+        products: rows,
+        pagination: {
+            total: count,
+            page,
+            limit,
+            totalPages: Math.ceil(count / limit)
+        }
+    };
 
-    return products;
+    // Cache for 10 minutes
+    await setCache(cacheKey, result, 600);
+
+    return result;
 }
 
 async function getProductById(id) {
