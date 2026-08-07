@@ -1,4 +1,4 @@
-const {register, login, createGuest, getProfile} = require('../auth/auth.controller');
+const {register, login, createGuest, getProfile, googleCallback} = require('../auth/auth.controller');
 const authMiddleware = require('../../middleware/auth');
 
 async function routes(fastify) {
@@ -34,6 +34,8 @@ async function routes(fastify) {
 
     fastify.post("/auth/guest", createGuest);
     fastify.get("/auth/profile", {preHandler: [authMiddleware]}, getProfile);
+    // Google OAuth callback
+    fastify.get('/auth/google/callback', googleCallback);
 }
 
 module.exports = routes;

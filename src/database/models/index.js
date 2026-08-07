@@ -12,9 +12,10 @@ const Role = sequelize.define('Role', {
 const User = sequelize.define('User', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     email: {type: DataTypes.STRING, allowNull: false, unique: true},
-    password_hash: {type: DataTypes.STRING},
+    password_hash: {type: DataTypes.STRING, allowNull: true},
     full_name: {type: DataTypes.STRING, allowNull: false},
-    phone: {type: DataTypes.STRING, allowNull: false},
+    phone: {type: DataTypes.STRING, allowNull: true},
+    google_id: {type: DataTypes.STRING, allowNull: true, unique: true},
     role_id: {type: DataTypes.INTEGER, references: {model: 'roles', key: 'id'}},
     is_guest: {type: DataTypes.BOOLEAN, defaultValue: false},
     email_verified: {type: DataTypes.BOOLEAN, defaultValue: false},
