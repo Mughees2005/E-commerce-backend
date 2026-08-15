@@ -47,6 +47,9 @@ async function setupDatabase() {
         // registering cart routes
         fastify.register(require('./modules/cart/cart.routes'));
 
+        // registering wishlist routes
+        fastify.register(require('./modules/wishlist/wishlist.routes'));
+
         // registering order routes
         fastify.register(require('./modules/orders/order.routes'));
 
